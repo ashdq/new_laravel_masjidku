@@ -3,6 +3,7 @@
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\KegiatanController;
+use App\Http\Controllers\UserController;
 
 /*
 |--------------------------------------------------------------------------
@@ -34,6 +35,14 @@ Route::prefix('kegiatan')->group(function () {
     Route::get('/{id}', [KegiatanController::class, 'show']);          // Get detail kegiatan
     Route::put('/{id}', [KegiatanController::class, 'update']);        // Update kegiatan
     Route::delete('/{id}', [KegiatanController::class, 'destroy']);    // Hapus kegiatan
+});
+
+Route::prefix('users')->group(function () {
+    Route::get('/', [UserController::class, 'index']);          // Get semua user
+    Route::post('/', [UserController::class, 'store']);         // Membuat user baru
+    Route::get('/{user}', [UserController::class, 'show']);     // Get detail user
+    Route::put('/{user}', [UserController::class, 'update']);   // Update user
+    Route::delete('/{user}', [UserController::class, 'destroy']); // Hapus user
 });
 
 
