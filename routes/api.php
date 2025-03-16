@@ -4,6 +4,9 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\KegiatanController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\DonasiController;
+use App\Http\Controllers\PengeluaranController;
+use App\Http\Controllers\SholatController;
 
 /*
 |--------------------------------------------------------------------------
@@ -19,6 +22,32 @@ use App\Http\Controllers\UserController;
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
+
+// Route::middleware(['auth:api'])->group(function () {
+//     // Admin: Bisa akses semua
+//     Route::middleware('role:admin')->group(function () {
+//         Route::apiResource('users', UserController::class);
+//         Route::apiResource('kegiatan', KegiatanController::class);
+//         Route::apiResource('donasi', DonasiController::class);
+//         Route::apiResource('pengeluaran', PengeluaranController::class);
+//         Route::apiResource('sholat', SholatController::class);
+//     });
+
+//     // Takmir: Bisa akses donasi, pengeluaran, sholat
+//     Route::middleware('role:takmir')->group(function () {
+//         Route::apiResource('donasi', DonasiController::class)->only(['index', 'store']);
+//         Route::apiResource('pengeluaran', PengeluaranController::class)->only(['index', 'store']);
+//         Route::apiResource('sholat', SholatController::class)->only(['index']);
+//     });
+
+//     // Warga: Hanya bisa melihat kegiatan, sholat, dan donasi
+//     Route::middleware('role:warga')->group(function () {
+//         Route::get('kegiatan', [KegiatanController::class, 'index']);
+//         Route::get('sholat', [SholatController::class, 'index']);
+//         Route::get('donasi', [DonasiController::class, 'index']);
+//     });
+// });
+
 
 // Route test API
 Route::get('/test', function () {
@@ -43,6 +72,22 @@ Route::prefix('users')->group(function () {
     Route::get('/{user}', [UserController::class, 'show']);     // Get detail user
     Route::put('/{user}', [UserController::class, 'update']);   // Update user
     Route::delete('/{user}', [UserController::class, 'destroy']); // Hapus user
+});
+Route::prefix('donasi')->group(function () {
+    Route::get('/', [DonasiController::class, 'index']);          // Get semua donasi
+    Route::post('/', [DonasiController::class, 'store']);         // Membuat data donasi baru
+    // Route::get('/{donasi}', [DonasiController::class, 'show']);     // Get detail donasi
+});
+Route::prefix('pengeluaran')->group(function () {
+    Route::get('/', [PengeluaranController::class, 'index']);          // Get semua pengeluaran
+    Route::post('/', [PengeluaranController::class, 'store']);         // Membuat data pengeluaran baru
+    Route::get('/{id}', [PengeluaranController::class, 'show']);     // Get detail pengeluaran
+    Route::put('/{id}', [PengeluaranController::class, 'update']);   // Update pengeluaran
+});
+Route::prefix('sholat')->group(function () {
+    Route::get('/', [SholatController::class, 'index']);          // Get semua data jadwal sholat
+    Route::post('/', [SholatController::class, 'store']);         // Membuat data jadwal sholat baru
+    Route::get('/{id}', [SholatController::class, 'show']);     // Get detail datajadwal sholat
 });
 
 

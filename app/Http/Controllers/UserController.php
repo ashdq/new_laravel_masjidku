@@ -17,6 +17,29 @@ class UserController extends Controller
         return response()->json($users);
     }
 
+    // public function createTakmir(Request $request)
+    // {
+    //     if (auth()->user()->roles !== 'admin') {
+    //         return response()->json(['message' => 'Unauthorized'], 403);
+    //     }
+
+    //     $validatedData = $request->validate([
+    //         'name' => 'required|string|max:255',
+    //         'email' => 'required|string|email|max:255|unique:users',
+    //         'password' => 'required|string|min:6',
+    //     ]);
+
+    //     $user = User::create([
+    //         'name' => $validatedData['name'],
+    //         'email' => $validatedData['email'],
+    //         'password' => bcrypt($validatedData['password']),
+    //         'roles' => 'takmir',
+    //     ]);
+
+    //     return response()->json(['message' => 'Takmir account created successfully', 'user' => $user], 201);
+    // }
+
+
     /**
      * Store a newly created user in storage.
      */

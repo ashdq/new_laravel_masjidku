@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class Pengeluaran extends Model
 {
+    protected $table = "pengeluaran";
     protected $fillable = [
         'keperluan',
         'jumlah_pengeluaran',

@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class Sholat extends Model
 {
+    protected $table = "sholat";
     protected $fillable = [
         'tanggal',
         'imsak',
