@@ -36,6 +36,12 @@ class RegisterController extends Controller
         return response()->json(['token' => $token]);
     }
 
+    public function logout()
+    {
+        auth()->logout();
+        return response()->json(['message' => 'Successfully logged out']);
+    }
+
     public function index()
     {
         return response()->json(User::all());
