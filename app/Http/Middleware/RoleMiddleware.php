@@ -7,17 +7,31 @@ use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Illuminate\Support\Facades\Auth;
 
+
 class RoleMiddleware
 {
+    // /**
+    //  * Handle an incoming request.
+    //  *
+    //  * @param  \Closure(\Illuminate\Http\Request): (\Symfony\Component\HttpFoundation\Response)  $next
+    //  */
+    // public function handle(Request $request, Closure $next, $role)
+    // {
+    //     if (!Auth::check() || Auth::user()->roles !== $role) {
+    //         return response()->json(['message' => 'Unauthorized'], 403);
+    //     }
+
+    //     return $next($request);
+    // }
     /**
      * Handle an incoming request.
-     *
-     * @param  \Closure(\Illuminate\Http\Request): (\Symfony\Component\HttpFoundation\Response)  $next
      */
-    public function handle(Request $request, Closure $next, $role)
+    public function handle(Request $request, Closure $next, ...$roles): Response
     {
-        if (!Auth::check() || Auth::user()->roles !== $role) {
-            return response()->json(['message' => 'Unauthorized'], 403);
+        $user = $request->user();
+
+        if (!$user || !in_array($user->roles, $roles)) {
+            return response()->json(['message' => 'Unauthorized. Access denied.'], 403);
         }
 
         return $next($request);
