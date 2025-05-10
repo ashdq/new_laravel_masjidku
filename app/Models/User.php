@@ -5,25 +5,11 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
-use Tymon\JWTAuth\Contracts\JWTSubject;
+use Laravel\Sanctum\HasApiTokens;
 
-class User extends Authenticatable implements JWTSubject
+class User extends Authenticatable
 {
-    /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasFactory, Notifiable;
-
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var list<string>
-     */
-    public function getJWTIdentifier(){
-        return $this->getKey();
-    }
-
-    public function getJWTCustomClaims(){
-        return [];
-    }
+    use HasApiTokens, HasFactory, Notifiable;
 
     protected $fillable = [
         'name',
@@ -32,49 +18,42 @@ class User extends Authenticatable implements JWTSubject
         'roles',
     ];
 
-    /**
-     * The attributes that should be hidden for serialization.
-     *
-     * @var list<string>
-     */
     protected $hidden = [
         'password',
-        'remember_token',
     ];
 
-    /**
-     * Get the attributes that should be cast.
-     *
-     * @return array<string, string>
-     */
-    protected function casts(): array
+    protected $casts = [
+        'password' => 'hashed',
+        'roles' => 'string',
+    ];
+
+    public function donasis()
     {
-        return [
-            'email_verified_at' => 'datetime',
-            'password' => 'hashed',
-            'roles' => 'string',
-        ];
+        return $this->hasMany(Donasi::class, 'user_id');
     }
 
-    /**
-     * Set the default value for roles attribute.
-     *
-     * @return void
-     */
-    protected static function boot()
+    public function donaturDonasis()
     {
-        parent::boot();
-
-        static::creating(function ($user) {
-            if (empty($user->roles)) {
-                $user->roles = 'warga'; // Nilai default
-            }
-        });
+        return $this->hasMany(Donasi::class, 'donatur_id');
     }
 
-    // Menambahkan relasi ke Donasi
-    public function donasi()
+    public function pengeluarans()
     {
-        return $this->hasMany(Donasi::class);
+        return $this->hasMany(Pengeluaran::class, 'pengurus');
+    }
+
+    public function isAdmin()
+    {
+        return $this->roles === 'admin';
+    }
+
+    public function isTakmir()
+    {
+        return $this->roles === 'takmir';
+    }
+
+    public function isWarga()
+    {
+        return $this->roles === 'warga';
     }
 }

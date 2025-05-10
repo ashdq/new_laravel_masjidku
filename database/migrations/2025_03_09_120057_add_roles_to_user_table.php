@@ -10,16 +10,16 @@ return new class extends Migration
      * Run the migrations.
      */
     public function up()
-{
-    Schema::table('users', function (Blueprint $table) {
-        $table->enum('roles', ['admin', 'takmir', 'warga'])->default('warga');
-    });
-}
+    {
+        Schema::table('users', function (Blueprint $table) {
+            $table->enum('roles', ['admin', 'takmir', 'warga'])->default('warga');
+        });
+    }
 
-public function down()
-{
-    Schema::table('users', function (Blueprint $table) {
-        $table->dropColumn('roles');
-    });
-}
+    public function down()
+    {
+        Schema::table('users', function (Blueprint $table) {
+            $table->dropColumn('roles');
+        });
+    }
 };
