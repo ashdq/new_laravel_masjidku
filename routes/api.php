@@ -2,14 +2,14 @@
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\KegiatanController;
-use App\Http\Controllers\UserController;
-use App\Http\Controllers\DonasiController;
-use App\Http\Controllers\PengeluaranController;
-use App\Http\Controllers\SholatController;
+use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\UserController;
+use App\Http\Controllers\Api\KegiatanController;
+use App\Http\Controllers\Api\DonasiController;
+use App\Http\Controllers\Api\PengeluaranController;
+use App\Http\Controllers\Api\SholatController;
 use App\Http\Controllers\Api\RegisterController;
 use Illuminate\Support\Facades\Hash;
-use App\Http\Controllers\Api\AuthController;
 
 
 // Public routes
@@ -23,12 +23,21 @@ Route::middleware(['auth:sanctum'])->group(function () {
     });
     Route::post('/logout', [AuthController::class, 'logout']);
     
-    // Registrasi khusus admin
+    // User profile management (for all authenticated users)
+    Route::put('/profile', [UserController::class, 'updateProfile']);
+    Route::delete('/profile', [UserController::class, 'deleteOwnAccount']);
+    
+    // Admin only routes
     Route::middleware(['can:admin'])->group(function () {
+        // User registration by admin
         Route::post('/admin/register', [AuthController::class, 'registerByAdmin']);
-        Route::get('/users', function () {
-            return \App\Models\User::all();
-        });
+        
+        // User management
+        Route::get('/users', [UserController::class, 'index']);
+        Route::post('/users', [UserController::class, 'store']);
+        Route::get('/users/{user}', [UserController::class, 'show']);
+        Route::put('/users/{user}', [UserController::class, 'update']);
+        Route::delete('/users/{user}', [UserController::class, 'destroy']);
     });
 });
 
