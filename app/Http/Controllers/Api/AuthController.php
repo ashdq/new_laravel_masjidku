@@ -3,174 +3,118 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
 use App\Models\User;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Validation\ValidationException;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\Rules\Password;
 
 class AuthController extends Controller
 {
-    // // ✅ Register untuk warga
-    // public function registerWarga(Request $request)
-    // {
-    //     $validated = $request->validate([
-    //         'name' => 'required|string|max:255',
-    //         'email' => 'required|string|email|max:255|unique:users',
-    //         'password' => 'required|string|min:8'
-    //     ]);
-
-    //     $user = User::create([
-    //         'name' => $validated['name'],
-    //         'email' => $validated['email'],
-    //         'password' => bcrypt($validated['password']),
-    //         'roles' => 'warga'
-    //     ]);
-
-    //     return response()->json([
-    //         'message' => 'Registration successful',
-    //         'user' => $user
-    //     ], 201);
-    // }
-    // Warga Register
-    public function register(Request $request)
+    public function registerPublic(Request $request)
     {
-        $request->validate([
+        $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:255',
-            'email' => 'required|string|email|unique:users',
-            'password' => 'required|string|min:6'
+            'email' => 'required|string|email|max:255|unique:users',
+            'password' => ['required', 'confirmed', Password::defaults()],
         ]);
+
+        if ($validator->fails()) {
+            return response()->json($validator->errors(), 422);
+        }
 
         $user = User::create([
             'name' => $request->name,
             'email' => $request->email,
-            'roles' => 'warga',
             'password' => Hash::make($request->password),
+            'roles' => 'warga', // Otomatis jadi warga
         ]);
 
-        $token = $user->createToken('auth_token')->plainTextToken;
-
-        return response()->json([
-            'message' => 'Registered successfully',
-            'user' => $user,
-            'token' => $token
-        ], 201);
+        return response()->json(['message' => 'Registrasi berhasil']);
     }
 
-    // ✅ Tambahkan fungsi registerTakmir
-    // public function registerTakmir(Request $request)
-    // {
-    //     $user = $request->user();
-
-    //     if ($user->roles !== 'admin') {
-    //         return response()->json(['message' => 'Unauthorized. Only admin can register takmir.'], 403);
-    //     }
-
-    //     $validated = $request->validate([
-    //         'name' => 'required|string|max:255',
-    //         'email' => 'required|string|email|max:255|unique:users',
-    //         'password' => 'required|string|min:8',
-    //     ]);
-
-    //     $newUser = User::create([
-    //         'name' => $validated['name'],
-    //         'email' => $validated['email'],
-    //         'password' => bcrypt($validated['password']),
-    //         'roles' => 'takmir'
-    //     ]);
-
-    //     return response()->json([
-    //         'message' => 'Takmir account created successfully',
-    //         'user' => $newUser
-    //     ], 201);
-    // }
-    // Admin create Takmir
-    public function createTakmir(Request $request)
+    public function registerByAdmin(Request $request)
     {
-        if ($request->user()->roles !== 'admin') {
-            return response()->json(['message' => 'Unauthorized'], 403);
+        try {
+            $validator = Validator::make($request->all(), [
+                'name' => 'required|string|max:255',
+                'email' => 'required|string|email|max:255|unique:users',
+                'password' => ['required', 'confirmed', Password::defaults()],
+                'roles' => 'required|in:admin,takmir,warga',
+            ]);
+
+            if ($validator->fails()) {
+                return response()->json([
+                    'success' => false,
+                    'errors' => $validator->errors()
+                ], 422);
+            }
+
+            // Check for admin privileges when registering admin/takmir
+            if (in_array($request->roles, ['admin', 'takmir'])) {
+                if (!auth()->check() || auth()->user()->roles !== 'admin') {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Unauthorized to register this role'
+                    ], 403);
+                }
+            }
+
+            $user = User::create([
+                'name' => $request->name,
+                'email' => $request->email,
+                'password' => Hash::make($request->password),
+                'roles' => $request->roles,
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'User registered successfully',
+                'user' => $user
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Registration error: '.$e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Server error during registration'
+            ], 500);
         }
-
-        $request->validate([
-            'name' => 'required|string',
-            'email' => 'required|string|email|unique:users',
-            'password' => 'required|string|min:6',
-        ]);
-
-        $takmir = User::create([
-            'name' => $request->name,
-            'email' => $request->email,
-            'roles' => 'takmir',
-            'password' => Hash::make($request->password),
-        ]);
-
-        return response()->json([
-            'message' => 'Takmir created successfully',
-            'user' => $takmir
-        ], 201);
     }
 
-    // // ✅ Login (semua role)
-    // public function login(Request $request)
-    // {
-    //     $request->validate([
-    //         'email' => 'required|string|email',
-    //         'password' => 'required|string'
-    //     ]);
-
-    //     $user = User::where('email', $request->email)->first();
-
-    //     if (! $user || ! Hash::check($request->password, $user->password)) {
-    //         throw ValidationException::withMessages([
-    //             'email' => ['The provided credentials are incorrect.'],
-    //         ]);
-    //     }
-
-    //     // Buat token baru
-    //     $token = $user->createToken('auth_token')->plainTextToken;
-
-    //     return response()->json([
-    //         'message' => 'Login successful',
-    //         'user' => $user,
-    //         'token' => $token
-    //     ]);
-    // }
-     // Login
     public function login(Request $request)
     {
         $request->validate([
             'email' => 'required|email',
-            'password' => 'required'
+            'password' => 'required',
         ]);
 
         $user = User::where('email', $request->email)->first();
 
-        if (! $user || ! Hash::check($request->password, $user->password)) {
+        if (!$user || !Hash::check($request->password, $user->password)) {
             return response()->json(['message' => 'Invalid credentials'], 401);
         }
 
         $token = $user->createToken('auth_token')->plainTextToken;
 
         return response()->json([
-            'message' => 'Login successful',
+            'message' => 'Login success',
+            'access_token' => $token,
+            'token_type' => 'Bearer',
             'user' => $user,
-            'token' => $token
         ]);
     }
 
-    // // ✅ Logout
-    // public function logout(Request $request)
-    // {
-    //     $request->user()->currentAccessToken()->delete();
-
-    //     return response()->json([
-    //         'message' => 'Logged out successfully'
-    //     ]);
-    // }
-    // Logout
     public function logout(Request $request)
     {
         $request->user()->currentAccessToken()->delete();
-        return response()->json(['message' => 'Logged out']);
+
+        return response()->json(['message' => 'Logout success']);
+    }
+
+    public function me(Request $request)
+    {
+        return response()->json($request->user());
     }
 }
-
