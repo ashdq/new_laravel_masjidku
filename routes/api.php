@@ -27,6 +27,9 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::put('/profile', [UserController::class, 'updateProfile']);
     Route::delete('/profile', [UserController::class, 'deleteOwnAccount']);
     
+    // Kegiatan management (for authenticated users)
+    Route::apiResource('kegiatan', KegiatanController::class);
+    
     // Admin only routes
     Route::middleware(['can:admin'])->group(function () {
         // User registration by admin

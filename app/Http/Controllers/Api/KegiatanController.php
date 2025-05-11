@@ -1,54 +1,100 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Api;
 
+use App\Http\Controllers\Controller;
 use App\Models\Kegiatan;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class KegiatanController extends Controller
 {
     public function index()
     {
-        $jadwal_kegiatan = Kegiatan::select('id','nama_kegiatan', 'waktu_kegiatan')->get();
-        return response()->json(['data' => $jadwal_kegiatan]);
+        $kegiatan = Kegiatan::select('id', 'nama_kegiatan', 'tanggal_kegiatan', 'waktu_kegiatan', 'gambar_kegiatan')
+            ->orderBy('tanggal_kegiatan', 'desc')
+            ->get();
+        return response()->json(['data' => $kegiatan]);
     }
 
     public function store(Request $request)
     {
         $request->validate([
-            'nama_kegiatan' => 'required|string',
+            'nama_kegiatan' => 'required|string|max:255',
             'tanggal_kegiatan' => 'required|date',
-            'waktu_kegiatan' => 'required'
+            'waktu_kegiatan' => 'required',
+            'gambar_kegiatan' => 'nullable|image|mimes:jpeg,png,jpg|max:2048'
         ]);
 
-        $jadwal_kegiatan = Kegiatan::create($request->all());
-        return response()->json($jadwal_kegiatan, 201);
+        $data = $request->all();
+
+        if ($request->hasFile('gambar_kegiatan')) {
+            $file = $request->file('gambar_kegiatan');
+            $filename = Str::random(20) . '.' . $file->getClientOriginalExtension();
+            $file->storeAs('public/kegiatan', $filename);
+            $data['gambar_kegiatan'] = 'storage/kegiatan/' . $filename;
+        }
+
+        $kegiatan = Kegiatan::create($data);
+        return response()->json([
+            'message' => 'Kegiatan berhasil ditambahkan',
+            'data' => $kegiatan
+        ], 201);
     }
 
     public function show($id)
     {
-        $jadwal_kegiatan = Kegiatan::findOrFail($id);
-        return response()->json($jadwal_kegiatan);
+        $kegiatan = Kegiatan::findOrFail($id);
+        return response()->json(['data' => $kegiatan]);
     }
 
     public function update(Request $request, $id)
     {
-        $jadwal_kegiatan = Kegiatan::findOrFail($id);
+        $kegiatan = Kegiatan::findOrFail($id);
         
         $request->validate([
-            'nama_kegiatan' => 'required|string',
+            'nama_kegiatan' => 'required|string|max:255',
             'tanggal_kegiatan' => 'required|date',
-            'waktu_kegiatan' => 'required'
+            'waktu_kegiatan' => 'required',
+            'gambar_kegiatan' => 'nullable|image|mimes:jpeg,png,jpg|max:2048'
         ]);
 
-        $jadwal_kegiatan->update($request->all());
-        return response()->json($jadwal_kegiatan);
+        $data = $request->all();
+
+        if ($request->hasFile('gambar_kegiatan')) {
+            // Hapus gambar lama jika ada
+            if ($kegiatan->gambar_kegiatan) {
+                $oldImage = str_replace('storage/', 'public/', $kegiatan->gambar_kegiatan);
+                Storage::delete($oldImage);
+            }
+
+            $file = $request->file('gambar_kegiatan');
+            $filename = Str::random(20) . '.' . $file->getClientOriginalExtension();
+            $file->storeAs('public/kegiatan', $filename);
+            $data['gambar_kegiatan'] = 'storage/kegiatan/' . $filename;
+        }
+
+        $kegiatan->update($data);
+        return response()->json([
+            'message' => 'Kegiatan berhasil diperbarui',
+            'data' => $kegiatan
+        ]);
     }
 
     public function destroy($id)
     {
-        $jadwal_kegiatan = Kegiatan::findOrFail($id);
-        $jadwal_kegiatan->delete();
-        return response()->json(null, 204);
+        $kegiatan = Kegiatan::findOrFail($id);
+        
+        // Hapus gambar jika ada
+        if ($kegiatan->gambar_kegiatan) {
+            $imagePath = str_replace('storage/', 'public/', $kegiatan->gambar_kegiatan);
+            Storage::delete($imagePath);
+        }
+
+        $kegiatan->delete();
+        return response()->json([
+            'message' => 'Kegiatan berhasil dihapus'
+        ], 204);
     }
 }
