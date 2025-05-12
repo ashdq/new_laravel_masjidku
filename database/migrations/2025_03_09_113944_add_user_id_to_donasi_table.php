@@ -13,6 +13,7 @@ return new class extends Migration
     {
         Schema::table('donasi', function (Blueprint $table) {
             $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
+            $table->foreignId('donatur_id')->nullable()->constrained('users')->onDelete('set null');
         });
     }
 
@@ -22,7 +23,9 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('donasi', function (Blueprint $table) {
-            //
+            $table->dropForeign(['user_id']);
+            $table->dropForeign(['donatur_id']);
+            $table->dropColumn(['user_id', 'donatur_id']);
         });
     }
 };

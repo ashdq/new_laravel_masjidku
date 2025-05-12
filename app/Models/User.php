@@ -20,9 +20,11 @@ class User extends Authenticatable
 
     protected $hidden = [
         'password',
+        'remember_token',
     ];
 
     protected $casts = [
+        'email_verified_at' => 'datetime',
         'password' => 'hashed',
         'roles' => 'string',
     ];
@@ -39,21 +41,26 @@ class User extends Authenticatable
 
     public function pengeluarans()
     {
-        return $this->hasMany(Pengeluaran::class, 'pengurus');
+        return $this->hasMany(Pengeluaran::class, 'user_id');
     }
 
-    public function isAdmin()
+    public function isAdmin(): bool
     {
         return $this->roles === 'admin';
     }
 
-    public function isTakmir()
+    public function isTakmir(): bool
     {
         return $this->roles === 'takmir';
     }
 
-    public function isWarga()
+    public function isWarga(): bool
     {
         return $this->roles === 'warga';
+    }
+
+    public function hasRole(string $role): bool
+    {
+        return $this->roles === $role;
     }
 }

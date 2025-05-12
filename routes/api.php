@@ -7,8 +7,6 @@ use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\KegiatanController;
 use App\Http\Controllers\Api\DonasiController;
 use App\Http\Controllers\Api\PengeluaranController;
-use App\Http\Controllers\Api\SholatController;
-use App\Http\Controllers\Api\RegisterController;
 use Illuminate\Support\Facades\Hash;
 
 
@@ -29,6 +27,16 @@ Route::middleware(['auth:sanctum'])->group(function () {
     
     // Kegiatan management (for authenticated users)
     Route::apiResource('kegiatan', KegiatanController::class);
+    
+    // Donasi routes - Specific routes first
+    Route::get('/donasi/statistics', [DonasiController::class, 'getStatistics']);
+    Route::get('/donasi/donors', [DonasiController::class, 'getDonors']);
+    Route::get('/donasi/my-donations', [DonasiController::class, 'getMyDonations']);
+    
+    // Donasi general routes
+    Route::get('/donasi', [DonasiController::class, 'index']);
+    Route::post('/donasi', [DonasiController::class, 'store']);
+    Route::get('/donasi/{donasi}', [DonasiController::class, 'show']);
     
     // Admin only routes
     Route::middleware(['can:admin'])->group(function () {

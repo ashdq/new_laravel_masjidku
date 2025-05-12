@@ -12,13 +12,29 @@ class VerifyCsrfToken extends Middleware
      * @var array<int, string>
      */
     protected $except = [
-        'api/admin/register',
-        'api/register',
+        // Auth routes
         'api/login',
+        'api/register',
+        'api/logout',
+        'api/admin/register',
+        
+        // User routes
         'api/users',
         'api/users/*',
         'api/profile',
+        
+        // Kegiatan routes
         'api/kegiatan',
-        'api/kegiatan/*'
+        'api/kegiatan/*',
+        
+        // Donasi routes
+        'api/donasi',
+        'api/donasi/*',
+        'api/donasi/statistics',
+        'api/donasi/donors',
+        'api/donasi/my-donations',
+        
+        // Sanctum routes
+        'sanctum/csrf-cookie'
     ];
 }
