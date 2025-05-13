@@ -5,11 +5,14 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Donasi;
+use App\Models\KeuanganMasjid;
+use App\Models\Pengeluaran;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 use Exception;
+use Illuminate\Support\Facades\Log;
 
 class DonasiController extends Controller
 {
@@ -64,6 +67,7 @@ class DonasiController extends Controller
                 'jumlah_donasi' => 'required|numeric|min:0',
                 'date' => 'required|date',
                 'note' => 'nullable|string',
+                'donatur_id' => 'nullable|exists:users,id'
             ]);
 
             $donasi = Donasi::create([
@@ -74,6 +78,9 @@ class DonasiController extends Controller
                 'user_id' => $user->id,
                 'donatur_id' => $user->id
             ]);
+
+            // Update saldo masjid
+            KeuanganMasjid::updateSaldo($request->jumlah_donasi, 'add');
 
             return response()->json([
                 'status' => 'success',
@@ -267,6 +274,38 @@ class DonasiController extends Controller
             return response()->json([
                 'status' => 'error',
                 'message' => 'Gagal memuat riwayat donasi',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function getTotalDonasi(): JsonResponse
+    {
+        $total = Donasi::sum('jumlah_donasi');
+        return response()->json(['total_donasi' => $total]);
+    }
+
+    // app/Http/Controllers/Api/DonasiController.php
+    public function getKeuanganMasjid()
+    {
+        try {
+            $totalDonasi = DB::table('donasi')->sum('jumlah_donasi');
+            $totalPengeluaran = DB::table('pengeluaran')->sum('jumlah_pengeluaran');
+            $saldoMasjid = $totalDonasi - $totalPengeluaran;
+            Log::info('Total Donasi: ' . $totalDonasi);
+            Log::info('Total Pengeluaran: ' . $totalPengeluaran);
+            
+            return response()->json([
+                'total_donasi' => $totalDonasi,
+                'total_pengeluaran' => $totalPengeluaran,
+                'saldo_masjid' => $saldoMasjid
+            ]);
+        } catch (Exception $e) {
+            Log::info('Total Donasi: ' . $totalDonasi);
+            Log::info('Total Pengeluaran: ' . $totalPengeluaran);
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Gagal memuat data keuangan masjid',
                 'error' => $e->getMessage()
             ], 500);
         }

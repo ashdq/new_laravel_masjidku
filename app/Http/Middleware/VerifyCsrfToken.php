@@ -33,6 +33,12 @@ class VerifyCsrfToken extends Middleware
         'api/donasi/statistics',
         'api/donasi/donors',
         'api/donasi/my-donations',
+        '/donasi/total',
+        'api/donasi/keuangan-masjid',
+        
+        // Pengeluaran routes
+        'api/pengeluaran',
+        'api/pengeluaran/*',
         
         // Sanctum routes
         'sanctum/csrf-cookie'

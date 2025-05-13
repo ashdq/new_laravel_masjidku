@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\KegiatanController;
 use App\Http\Controllers\Api\DonasiController;
 use App\Http\Controllers\Api\PengeluaranController;
+use App\Http\Controllers\Api\KeuanganController;
 use Illuminate\Support\Facades\Hash;
 
 
@@ -38,6 +39,23 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::post('/donasi', [DonasiController::class, 'store']);
     Route::get('/donasi/{donasi}', [DonasiController::class, 'show']);
     
+    // Get total donasi (new route)
+    Route::get('/donasi-total', [DonasiController::class, 'getTotalDonasi']);
+
+    // Pengeluaran routes
+    Route::get('/pengeluaran', [PengeluaranController::class, 'index']);
+    Route::post('/pengeluaran', [PengeluaranController::class, 'store']);
+    Route::get('/pengeluaran/{pengeluaran}', [PengeluaranController::class, 'show']);
+    Route::put('/pengeluaran/{pengeluaran}', [PengeluaranController::class, 'update']);
+    Route::delete('/pengeluaran/{pengeluaran}', [PengeluaranController::class, 'destroy']);
+    
+    // Get total pengeluaran (new route)
+    Route::get('/pengeluaran-total', [PengeluaranController::class, 'totalPengeluaran']);
+
+    // Keuangan routes
+    Route::get('/keuangan', [KeuanganController::class, 'index']);
+    Route::get('/keuangan/saldo', [KeuanganController::class, 'saldo']);
+
     // Admin only routes
     Route::middleware(['can:admin'])->group(function () {
         // User registration by admin

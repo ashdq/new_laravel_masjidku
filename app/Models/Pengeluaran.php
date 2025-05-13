@@ -16,7 +16,7 @@ class Pengeluaran extends Model
     ];
 
     protected $casts = [
-        'tanggal' => 'date',
+        'tanggal' => 'datetime',
         'jumlah_pengeluaran' => 'decimal:2'
     ];
     public function user(): BelongsTo
