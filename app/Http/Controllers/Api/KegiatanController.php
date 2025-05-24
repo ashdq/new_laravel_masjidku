@@ -14,7 +14,12 @@ class KegiatanController extends Controller
     {
         $kegiatan = Kegiatan::select('id', 'nama_kegiatan', 'tanggal_kegiatan', 'waktu_kegiatan', 'gambar_kegiatan')
             ->orderBy('tanggal_kegiatan', 'desc')
-            ->get();
+            ->get()
+            ->map(function ($item) {
+                $item->waktu_kegiatan = date('H:i:s', strtotime($item->waktu_kegiatan));
+                $item->tanggal_kegiatan = date('Y-m-d', strtotime($item->tanggal_kegiatan));
+                return $item;
+            });
         return response()->json(['data' => $kegiatan]);
     }
 
