@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\KegiatanController;
 use App\Http\Controllers\Api\DonasiController;
 use App\Http\Controllers\Api\PengeluaranController;
 use App\Http\Controllers\Api\KeuanganController;
+use App\Http\Controllers\Api\AspirasiController;
 use Illuminate\Support\Facades\Hash;
 
 
@@ -55,6 +56,12 @@ Route::middleware(['auth:sanctum'])->group(function () {
     // Keuangan routes
     Route::get('/keuangan', [KeuanganController::class, 'index']);
     Route::get('/keuangan/saldo', [KeuanganController::class, 'saldo']);
+
+    // Aspirasi routes
+    Route::post('/aspirasi', [AspirasiController::class, 'store']); // warga kirim aspirasi
+    Route::get('/aspirasi', [AspirasiController::class, 'index']); // admin & takmir lihat semua
+    Route::delete('/aspirasi/{id}', [AspirasiController::class, 'destroy']); // admin & takmir hapus aspirasi
+
 
     // Admin only routes
     Route::middleware(['can:admin'])->group(function () {
