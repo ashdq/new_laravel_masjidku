@@ -12,7 +12,8 @@ class Pengeluaran extends Model
         'jumlah_pengeluaran',
         'tanggal',
         'deskripsi',
-        'user_id'
+        'user_id',
+        'nota'
     ];
 
     protected $casts = [

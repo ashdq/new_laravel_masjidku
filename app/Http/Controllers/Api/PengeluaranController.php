@@ -10,6 +10,8 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class PengeluaranController extends Controller
 {
@@ -32,6 +34,7 @@ class PengeluaranController extends Controller
             'jumlah_pengeluaran' => 'required|numeric|min:0',
             'tanggal' => 'required|date',
             'deskripsi' => 'required|string',
+            'nota' => 'nullable|image|mimes:jpeg,png,jpg|max:2048'
         ]);
 
         // Check saldo cukup
@@ -42,13 +45,22 @@ class PengeluaranController extends Controller
             ], 400);
         }
 
-        $pengeluaran = Pengeluaran::create([
+        $data = [
             'keperluan' => $request->keperluan,
             'jumlah_pengeluaran' => $request->jumlah_pengeluaran,
             'tanggal' => $request->tanggal,
             'deskripsi' => $request->deskripsi,
             'user_id' => Auth::id(),
-        ]);
+        ];
+
+        if ($request->hasFile('nota')) {
+            $file = $request->file('nota');
+            $filename = Str::random(20) . '.' . $file->getClientOriginalExtension();
+            $file->storeAs('public/nota', $filename);
+            $data['nota'] = 'storage/nota/' . $filename;
+        }
+
+        $pengeluaran = Pengeluaran::create($data);
 
         // Update keuangan masjid
         KeuanganMasjid::updateSaldo($request->jumlah_pengeluaran, 'subtract');
@@ -73,7 +85,8 @@ class PengeluaranController extends Controller
             'keperluan' => 'sometimes|required|string|max:255',
             'jumlah_pengeluaran' => 'sometimes|required|numeric|min:0',
             'tanggal' => 'sometimes|required|date',
-            'deskripsi' => 'sometimes|required|string'
+            'deskripsi' => 'sometimes|required|string',
+            'nota' => 'nullable|image|mimes:jpeg,png,jpg|max:2048'
         ]);
 
         if ($validator->fails()) {
@@ -96,12 +109,27 @@ class PengeluaranController extends Controller
             }
         }
 
-        $pengeluaran->update([
+        $data = [
             'keperluan' => $request->keperluan ?? $pengeluaran->keperluan,
             'jumlah_pengeluaran' => $request->jumlah_pengeluaran ?? $pengeluaran->jumlah_pengeluaran,
             'tanggal' => $request->tanggal ?? $pengeluaran->tanggal,
             'deskripsi' => $request->deskripsi ?? $pengeluaran->deskripsi
-        ]);
+        ];
+
+        if ($request->hasFile('nota')) {
+            // Delete old nota if exists
+            if ($pengeluaran->nota) {
+                $oldNota = str_replace('storage/', 'public/', $pengeluaran->nota);
+                Storage::delete($oldNota);
+            }
+
+            $file = $request->file('nota');
+            $filename = Str::random(20) . '.' . $file->getClientOriginalExtension();
+            $file->storeAs('public/nota', $filename);
+            $data['nota'] = 'storage/nota/' . $filename;
+        }
+
+        $pengeluaran->update($data);
 
         return response()->json(['data' => $pengeluaran]);
     }
@@ -110,12 +138,18 @@ class PengeluaranController extends Controller
     {
         $pengeluaran = Pengeluaran::find($id);
         
-        // Return the amount to keuangan masjid before deleting
-        KeuanganMasjid::updateSaldo($pengeluaran->jumlah_pengeluaran, 'add');
-        
         if (!$pengeluaran) {
             return response()->json(['message' => 'Pengeluaran tidak ditemukan'], 404);
         }
+
+        // Delete nota if exists
+        if ($pengeluaran->nota) {
+            $notaPath = str_replace('storage/', 'public/', $pengeluaran->nota);
+            Storage::delete($notaPath);
+        }
+        
+        // Return the amount to keuangan masjid before deleting
+        KeuanganMasjid::updateSaldo($pengeluaran->jumlah_pengeluaran, 'add');
 
         $pengeluaran->delete();
 
