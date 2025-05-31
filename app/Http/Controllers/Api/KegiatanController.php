@@ -37,8 +37,10 @@ class KegiatanController extends Controller
         if ($request->hasFile('gambar_kegiatan')) {
             $file = $request->file('gambar_kegiatan');
             $filename = Str::random(20) . '.' . $file->getClientOriginalExtension();
+            $originalName = $file->getClientOriginalName(); // Simpan dengan ekstensi
             $file->storeAs('public/kegiatan', $filename);
-            $data['gambar_kegiatan'] = 'storage/kegiatan/' . $filename;
+            $data['gambar_kegiatan'] = $filename; // hanya nama file
+            $data['original_filename'] = $originalName;
         }
 
         $kegiatan = Kegiatan::create($data);
@@ -46,6 +48,17 @@ class KegiatanController extends Controller
             'message' => 'Kegiatan berhasil ditambahkan',
             'data' => $kegiatan
         ], 201);
+    }
+
+    public function download($filename)
+    {
+        $path = storage_path('app/public/kegiatan/' . $filename);
+
+        if (!file_exists($path)) {
+            return response()->json(['message' => 'File tidak ditemukan'], 404);
+        }
+
+        return response()->download($path);
     }
 
     public function show($id)
@@ -57,16 +70,16 @@ class KegiatanController extends Controller
     public function update(Request $request, $id)
     {
         $kegiatan = Kegiatan::findOrFail($id);
-        
-        $request->validate([
-            'nama_kegiatan' => 'required|string|max:255',
-            'tanggal_kegiatan' => 'required|date',
-            'waktu_kegiatan' => 'required',
-            'gambar_kegiatan' => 'nullable|image|mimes:jpeg,png,jpg|max:2048'
+
+        // Validasi hanya field yang dikirim
+        $validatedData = $request->validate([
+            'nama_kegiatan' => 'sometimes|string|max:255',
+            'tanggal_kegiatan' => 'sometimes|date',
+            'waktu_kegiatan' => 'sometimes',
+            'gambar_kegiatan' => 'sometimes|nullable|image|mimes:jpeg,png,jpg|max:2048'
         ]);
 
-        $data = $request->all();
-
+        // Jika gambar dikirim, handle upload
         if ($request->hasFile('gambar_kegiatan')) {
             // Hapus gambar lama jika ada
             if ($kegiatan->gambar_kegiatan) {
@@ -76,11 +89,15 @@ class KegiatanController extends Controller
 
             $file = $request->file('gambar_kegiatan');
             $filename = Str::random(20) . '.' . $file->getClientOriginalExtension();
+            $originalName = $file->getClientOriginalName(); // Simpan dengan ekstensi
             $file->storeAs('public/kegiatan', $filename);
-            $data['gambar_kegiatan'] = 'storage/kegiatan/' . $filename;
+            $data['gambar_kegiatan'] = $filename; // hanya nama file
+            $validatedData['original_filename'] = $originalName;
         }
 
-        $kegiatan->update($data);
+        // Update hanya field yang dikirim
+        $kegiatan->update($validatedData);
+
         return response()->json([
             'message' => 'Kegiatan berhasil diperbarui',
             'data' => $kegiatan
