@@ -35,6 +35,8 @@ class VerifyCsrfToken extends Middleware
         'api/donasi/my-donations',
         '/donasi/total',
         'api/donasi/keuangan-masjid',
+
+        'api/kegiatan/download/{filename}',
         
         // Pengeluaran routes
         'api/pengeluaran',

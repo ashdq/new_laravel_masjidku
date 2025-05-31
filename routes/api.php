@@ -9,13 +9,13 @@ use App\Http\Controllers\Api\DonasiController;
 use App\Http\Controllers\Api\PengeluaranController;
 use App\Http\Controllers\Api\KeuanganController;
 use App\Http\Controllers\Api\AspirasiController;
-use Illuminate\Support\Facades\Hash;
 
 
 // Public routes
 Route::post('/login', [AuthController::class, 'login']);
 Route::post('/register', [AuthController::class, 'registerPublic']); // Untuk user biasa
 
+Route::get('/kegiatan/download/{filename}', [KegiatanController::class, 'download']);
 // Protected routes by Auth
 Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('/me', function (Request $request) {
@@ -30,6 +30,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     // Kegiatan management (for authenticated users)
     Route::apiResource('kegiatan', KegiatanController::class);
     
+
     // Donasi routes - Specific routes first
     Route::get('/donasi/statistics', [DonasiController::class, 'getStatistics']);
     Route::get('/donasi/donors', [DonasiController::class, 'getDonors']);
