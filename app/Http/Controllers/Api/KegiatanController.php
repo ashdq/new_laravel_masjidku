@@ -39,7 +39,7 @@ class KegiatanController extends Controller
             $filename = Str::random(20) . '.' . $file->getClientOriginalExtension();
             $originalName = $file->getClientOriginalName(); // Simpan dengan ekstensi
             $file->storeAs('public/kegiatan', $filename);
-            $data['gambar_kegiatan'] = $filename; // hanya nama file
+            $data['gambar_kegiatan'] = 'storage/kegiatan/'.$filename; // hanya nama file
             $data['original_filename'] = $originalName;
         }
 
@@ -91,7 +91,7 @@ class KegiatanController extends Controller
             $filename = Str::random(20) . '.' . $file->getClientOriginalExtension();
             $originalName = $file->getClientOriginalName(); // Simpan dengan ekstensi
             $file->storeAs('public/kegiatan', $filename);
-            $data['gambar_kegiatan'] = $filename; // hanya nama file
+            $data['gambar_kegiatan'] = 'storage/kegiatan/'.$filename; // hanya nama file
             $validatedData['original_filename'] = $originalName;
         }
 
