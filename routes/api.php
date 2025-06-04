@@ -9,6 +9,7 @@ use App\Http\Controllers\Api\DonasiController;
 use App\Http\Controllers\Api\PengeluaranController;
 use App\Http\Controllers\Api\KeuanganController;
 use App\Http\Controllers\Api\AspirasiController;
+use App\Http\Controllers\Api\ArtikelController;
 
 
 // Public routes
@@ -62,6 +63,13 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::post('/aspirasi', [AspirasiController::class, 'store']); // warga kirim aspirasi
     Route::get('/aspirasi', [AspirasiController::class, 'index']); // admin & takmir lihat semua
     Route::delete('/aspirasi/{id}', [AspirasiController::class, 'destroy']); // admin & takmir hapus aspirasi
+
+    //Artikel routes
+    Route::get('/artikel', [ArtikelController::class, 'index']);
+    Route::post('/artikel', [ArtikelController::class, 'store']);
+    Route::get('/artikel/{id}', [ArtikelController::class, 'show']);
+    Route::put('/artikel/{id}', [ArtikelController::class, 'update']);
+    Route::delete('/artikel/{id}', [ArtikelController::class, 'destroy']);
 
 
     // Admin only routes
