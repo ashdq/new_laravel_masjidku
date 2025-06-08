@@ -10,12 +10,19 @@ use App\Http\Controllers\Api\PengeluaranController;
 use App\Http\Controllers\Api\KeuanganController;
 use App\Http\Controllers\Api\AspirasiController;
 use App\Http\Controllers\Api\ArtikelController;
+use App\Http\Controllers\Api\VerifyEmailController;
 
 
 // Public routes
 Route::post('/login', [AuthController::class, 'login']);
 Route::post('/register', [AuthController::class, 'registerPublic']); // Untuk user biasa
-
+Route::get('/email/verify/{id}/{hash}', [VerifyEmailController::class, '__invoke'])
+        ->middleware(['signed'])
+        ->name('verification.verify');
+Route::post('/email/verification-notification', function (Request $request) {
+    $request->user()->sendEmailVerificationNotification();
+    return response()->json(['status' => 'verification-link-sent']);
+})->middleware(['throttle:6,1'])->name('verification.send');
 Route::get('/kegiatan/download/{filename}', [KegiatanController::class, 'download']);
 // Protected routes by Auth
 Route::middleware(['auth:sanctum'])->group(function () {
@@ -25,7 +32,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
     
     // User profile management (for all authenticated users)
-    Route::put('/profile', [UserController::class, 'updateProfile']);
+    Route::put('/users/change-password', [UserController::class, 'changePassword']);
     Route::delete('/profile', [UserController::class, 'deleteOwnAccount']);
     
     // Kegiatan management (for authenticated users)
