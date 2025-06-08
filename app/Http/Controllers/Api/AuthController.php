@@ -9,6 +9,8 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rules\Password;
+use Illuminate\Auth\Events\Registered;
+use Illuminate\Support\Facades\Http;
 
 class AuthController extends Controller
 {
@@ -16,12 +18,18 @@ class AuthController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:255',
-            'email' => 'required|string|email|max:255|unique:users',
+            'email' => 'required|email|unique:users,email',
             'password' => ['required', 'confirmed', Password::defaults()],
         ]);
 
         if ($validator->fails()) {
             return response()->json($validator->errors(), 422);
+        }
+
+        if (!$this->isEmailReal($request->email)) {
+            return response()->json([
+                'message' => 'Email yang dimasukkan tidak valid atau tidak aktif.'
+            ], 422);
         }
 
         $user = User::create([
@@ -31,6 +39,7 @@ class AuthController extends Controller
             'roles' => 'warga', // Otomatis jadi warga
         ]);
 
+        // event(new Registered($user));
         return response()->json(['message' => 'Registrasi berhasil']);
     }
 
@@ -51,6 +60,12 @@ class AuthController extends Controller
                 ], 422);
             }
 
+            if (!$this->isEmailReal($request->email)) {
+                return response()->json([
+                    'message' => 'Email yang dimasukkan tidak valid atau tidak aktif.'
+                ], 422);
+            }
+
             // Check for admin privileges when registering admin/takmir
             if (in_array($request->roles, ['admin', 'takmir'])) {
                 if (!auth()->check() || auth()->user()->roles !== 'admin') {
@@ -68,6 +83,8 @@ class AuthController extends Controller
                 'roles' => $request->roles,
             ]);
 
+            // event(new Registered($user));
+
             return response()->json([
                 'success' => true,
                 'message' => 'User registered successfully',
@@ -82,6 +99,26 @@ class AuthController extends Controller
             ], 500);
         }
     }
+    
+    public function isEmailReal($email)
+    {
+        $apiKey = env('ABSTRACT_API_KEY'); // simpan di .env
+        $url = "https://emailvalidation.abstractapi.com/v1/?api_key=$apiKey&email=$email";
+
+        $response = Http::get($url);
+        $data = $response->json();
+
+        return $data['deliverability'] === 'DELIVERABLE'; // bisa juga tambahkan check lain
+    }
+    // protected function registered(Request $request, $user)
+    // {
+    //     event(new Registered($user));
+        
+    //     return response()->json([
+    //         'message' => 'Registration successful. Please check your email for verification.',
+    //         'user' => $user
+    //     ]);
+    // }
 
     public function login(Request $request)
     {
