@@ -17,6 +17,10 @@ class VerifyCsrfToken extends Middleware
         'api/register',
         'api/logout',
         'api/admin/register',
+        'api/forgot-password/send-otp',
+        'api/forgot-password/verify-otp',
+        'api/forgot-password/reset',
+
         
         // User routes
         'api/users',
