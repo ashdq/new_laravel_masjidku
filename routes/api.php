@@ -11,6 +11,7 @@ use App\Http\Controllers\Api\KeuanganController;
 use App\Http\Controllers\Api\AspirasiController;
 use App\Http\Controllers\Api\ArtikelController;
 use App\Http\Controllers\Api\VerifyEmailController;
+use App\Http\Controllers\Api\ForgotPasswordController;
 
 
 // Public routes
@@ -24,6 +25,10 @@ Route::post('/email/verification-notification', function (Request $request) {
     return response()->json(['status' => 'verification-link-sent']);
 })->middleware(['throttle:6,1'])->name('verification.send');
 Route::get('/kegiatan/download/{filename}', [KegiatanController::class, 'download']);
+Route::post('/forgot-password/send-otp', [ForgotPasswordController::class, 'sendOtp']);
+Route::post('/forgot-password/verify-otp', [ForgotPasswordController::class, 'verifyOtp']);
+Route::post('/forgot-password/reset', [ForgotPasswordController::class, 'resetPassword']);
+
 // Protected routes by Auth
 Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('/me', function (Request $request) {
