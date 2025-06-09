@@ -83,8 +83,6 @@ class AuthController extends Controller
                 'roles' => $request->roles,
             ]);
 
-            // event(new Registered($user));
-
             return response()->json([
                 'success' => true,
                 'message' => 'User registered successfully',
@@ -110,15 +108,6 @@ class AuthController extends Controller
 
         return $data['deliverability'] === 'DELIVERABLE'; // bisa juga tambahkan check lain
     }
-    // protected function registered(Request $request, $user)
-    // {
-    //     event(new Registered($user));
-        
-    //     return response()->json([
-    //         'message' => 'Registration successful. Please check your email for verification.',
-    //         'user' => $user
-    //     ]);
-    // }
 
     public function login(Request $request)
     {
