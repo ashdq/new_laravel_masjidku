@@ -1,0 +1,133 @@
+services:
+    #  migrate:
+    #    build: .
+    #    command: sh -c "sleep 10 && php artisan migrate --force && php artisan db:seed --force"
+    #    volumes:
+    #      - .:/var/www/html
+    #      - ./.env:/var/www/html/.env
+    #      - storage:/var/www/html/storage
+    #    depends_on:
+    #      pgsql:
+    #        condition: service_healthy
+    #      redis:
+    #        condition: service_healthy
+    #    networks:
+    #      - dms
+    #    restart: on-failure
+    # im turn off this cause the real database isnt with the docker image, then we dont need a migration again
+
+    app:
+        build: .
+        ports:
+            - "8000:8000"
+        volumes:
+            - .:/var/www/html
+            - ./.env:/var/www/html/.env
+            - storage:/var/www/html/storage
+        env_file:
+            - .env
+        environment:
+            APP_ENV: ${APP_ENV}
+            APP_DEBUG: ${APP_DEBUG}
+        depends_on:
+            #      migrate:
+            #        condition: service_completed_successfully
+            #      pgsql:
+            #        condition: service_healthy
+            redis:
+                condition: service_healthy
+        networks:
+            - dms
+        healthcheck:
+            test: [ "CMD", "curl", "-f", "http://localhost:8000/health" ]
+            interval: 30s
+            timeout: 10s
+            retries: 3
+        restart: unless-stopped
+
+    queue:
+        build: .
+        command: sh -c "php artisan queue:work --daemon --verbose --timeout=90"
+        volumes:
+            - .:/var/www/html
+        depends_on:
+            #     migrate:
+            #     condition: service_completed_successfully
+            #      pgsql:
+            #        condition: service_healthy
+            redis:
+                condition: service_healthy
+        networks:
+            - dms
+        restart: always
+
+    scheduler:
+        build: .
+        command: sh -c "while true; do php artisan schedule:run --verbose --no-interaction; sleep 60; done"
+        volumes:
+            - .:/var/www/html
+        depends_on:
+            #            migrate:
+            #                condition: service_completed_successfully
+            #      pgsql:
+            #        condition: service_healthy
+            redis:
+                condition: service_healthy
+        networks:
+            - dms
+        restart: always
+
+    #  pgsql:
+    #    image: 'postgres:17'
+    #    ports:
+    #      - '${FORWARD_DB_PORT:-5432}:5432'
+    #    environment:
+    #      PGPASSWORD: '${DB_PASSWORD:-secret}'
+    #      POSTGRES_DB: '${DB_DATABASE}'
+    #      POSTGRES_USER: '${DB_USERNAME}'
+    #      POSTGRES_PASSWORD: '${DB_PASSWORD:-secret}'
+    #    volumes:
+    #      - 'dms-pgsql:/var/lib/postgresql/data'
+    #    networks:
+    #      - dms
+    #    healthcheck:
+    #      test:
+    #        - CMD
+    #        - pg_isready
+    #        - '-q'
+    #        - '-d'
+    #        - '${DB_DATABASE}'
+    #        - '-U'
+    #        - '${DB_USERNAME}'
+    #      retries: 3
+    #      timeout: 5s
+
+    redis:
+        image: 'redis:alpine'
+        volumes:
+            - 'dms-redis:/data'
+            - ./redis.conf:/docker/redis.conf
+        command: >
+            --requirepass ${REDIS_PASSWORD}
+        networks:
+            - dms
+        healthcheck:
+            test:
+                - CMD
+                - redis-cli
+                - -a
+                - ${REDIS_PASSWORD}
+                - ping
+            retries: 3
+            timeout: 5s
+
+networks:
+    dms:
+        driver: bridge
+volumes:
+    #  dms-pgsql:
+    #    driver: local
+    dms-redis:
+        driver: local
+    storage:
+        driver: local
