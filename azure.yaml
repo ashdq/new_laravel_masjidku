@@ -1,0 +1,29 @@
+name: laravel-masjidku
+services:
+  - name: web
+    project: .
+    language: php
+    host: appservice
+    hooks:
+      prebuild:
+        windows:
+          shell: pwsh
+          run: composer install --no-dev --optimize-autoloader
+        linux:
+          shell: bash
+          run: composer install --no-dev --optimize-autoloader
+      postbuild:
+        windows:
+          shell: pwsh
+          run: |
+            php artisan key:generate
+            php artisan config:cache
+            php artisan route:cache
+            php artisan view:cache
+        linux:
+          shell: bash
+          run: |
+            php artisan key:generate
+            php artisan config:cache
+            php artisan route:cache
+            php artisan view:cache 
