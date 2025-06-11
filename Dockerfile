@@ -33,10 +33,19 @@ RUN apk add --no-cache \
     libzip-dev \
     zip \
     unzip \
-    git
+    git \
+    mysql \
+    mysql-client
 
 # Install PHP extensions
 RUN docker-php-ext-install pdo_mysql zip exif pcntl gd
+
+# Create necessary directories
+RUN mkdir -p /var/log/supervisor \
+    && mkdir -p /var/run/php-fpm \
+    && mkdir -p /var/log/nginx \
+    && mkdir -p /var/log/php \
+    && mkdir -p /var/lib/mysql
 
 # Configure nginx
 COPY docker/nginx.conf /etc/nginx/http.d/default.conf
@@ -57,7 +66,14 @@ COPY --from=node /app/public/build ./public/build
 # Set permissions
 RUN chown -R www-data:www-data /var/www/html \
     && chmod -R 755 /var/www/html/storage \
-    && chmod -R 755 /var/www/html/bootstrap/cache
+    && chmod -R 755 /var/www/html/bootstrap/cache \
+    && chown -R www-data:www-data /var/log/supervisor \
+    && chown -R www-data:www-data /var/log/nginx \
+    && chown -R www-data:www-data /var/log/php \
+    && chown -R mysql:mysql /var/lib/mysql
+
+# Initialize MySQL
+RUN mysql_install_db --user=mysql --datadir=/var/lib/mysql
 
 # Expose port 80
 EXPOSE 80
