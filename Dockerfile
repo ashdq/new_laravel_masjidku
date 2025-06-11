@@ -1,82 +1,66 @@
-# Stage 1: Composer dependencies
-FROM composer:2.6 as composer
+## Build stage for Node/Bun assets
+#FROM oven/bun:latest AS node-builder
+#WORKDIR /app
+#COPY package.json bun.lock ./
+#RUN bun install --frozen-lockfile
+#COPY . .
+#RUN bun run build
+# uncoment above this if u wanna do build bun + php
+# ill built it at my own machine cause it will be faster than im use prod server wwkwkw :v
+
+# PHP stage
+FROM dunglas/frankenphp
 
 WORKDIR /app
-
-COPY composer.json composer.lock ./
-RUN composer install --no-dev --no-scripts --no-autoloader --prefer-dist
-
-COPY . .
-RUN composer dump-autoload --optimize
-
-# Stage 2: Node dependencies and build assets
-FROM node:18-alpine as node
-
-WORKDIR /app
-
-COPY package.json package-lock.json ./
-RUN npm ci
-
-COPY . .
-RUN npm run build
-
-# Stage 3: PHP application
-FROM php:8.2-fpm-alpine
-
-# Install system dependencies
-RUN apk add --no-cache \
-    linux-headers \
-    bash \
-    nginx \
-    supervisor \
-    libpng-dev \
-    libzip-dev \
-    zip \
-    unzip \
-    git \
-    mysql \
-    mysql-client
 
 # Install PHP extensions
-RUN docker-php-ext-install pdo_mysql zip exif pcntl gd
+RUN install-php-extensions \
+    pcntl \
+    pdo_pgsql \
+    opcache \
+    zip \
+    gd \
+    intl \
+    bcmath \
+    redis \
+    mbstring \
+    openssl \
+    xml \
+    imagick
 
-# Create necessary directories
-RUN mkdir -p /var/log/supervisor \
-    && mkdir -p /var/run/php-fpm \
-    && mkdir -p /var/log/nginx \
-    && mkdir -p /var/log/php \
-    && mkdir -p /var/lib/mysql
+# Configure PHP
+COPY docker/php.ini /usr/local/etc/php/conf.d/custom.ini
 
-# Configure nginx
-COPY docker/nginx.conf /etc/nginx/http.d/default.conf
+# Install composer
+COPY --from=composer /usr/bin/composer /usr/bin/composer
 
-# Configure PHP-FPM
-COPY docker/php.ini /usr/local/etc/php/conf.d/local.ini
+# Copy all application files first
+COPY --chown=www-data:www-data . .
 
-# Configure supervisord
-COPY docker/supervisord.conf /etc/supervisord.conf
+# Copy built assets from node-builder stage/ im now uncoment this cause i dont wanna to build bun with my docker, ill built it separetelly
+#COPY --from=node-builder --chown=www-data:www-data /app/public/build public/build
 
-# Set working directory
-WORKDIR /var/www/html
+# Copy built bun, off this if u want to build it straight with docker
+COPY --chown=www-data:www-data public/build public/build
 
-# Copy application files
-COPY --from=composer /app .
-COPY --from=node /app/public/build ./public/build
+# Copy composer.lock and composer.json
+COPY composer.lock composer.json ./
+
+# Install PHP dependencies
+RUN composer install --prefer-dist --no-scripts --no-dev --no-autoloader --optimize-autoloader
+RUN composer dump-autoload --optimize
+
+# Laravel specific commands
+# Optimize Laravel
+RUN php artisan optimize
+RUN php artisan storage:link
 
 # Set permissions
-RUN chown -R www-data:www-data /var/www/html \
-    && chmod -R 755 /var/www/html/storage \
-    && chmod -R 755 /var/www/html/bootstrap/cache \
-    && chown -R www-data:www-data /var/log/supervisor \
-    && chown -R www-data:www-data /var/log/nginx \
-    && chown -R www-data:www-data /var/log/php \
-    && chown -R mysql:mysql /var/lib/mysql
+RUN chown -R www-data:www-data /app
+RUN chmod -R 755 /app/storage /app/bootstrap/cache
 
-# Initialize MySQL
-RUN mysql_install_db --user=mysql --datadir=/var/lib/mysql
+# Expose port
+EXPOSE 8000
 
-# Expose port 80
-EXPOSE 80
-
-# Start supervisord
-CMD ["/usr/bin/supervisord", "-n", "-c", "/etc/supervisord.conf"] 
+# Start Laravel Octane
+CMD ["php", "artisan", "octane:start", "--host=0.0.0.0", "--port=8000"]
