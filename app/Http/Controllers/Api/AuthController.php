@@ -101,12 +101,24 @@ class AuthController extends Controller
     public function isEmailReal($email)
     {
         $apiKey = env('ABSTRACT_API_KEY'); // simpan di .env
+        
+        // Jika API Key tidak diset, lewati validasi email agar tetap bisa registrasi (berguna untuk development)
+        if (!$apiKey) {
+            return true;
+        }
+        
         $url = "https://emailvalidation.abstractapi.com/v1/?api_key=$apiKey&email=$email";
 
-        $response = Http::get($url);
-        $data = $response->json();
+        try {
+            // verify => false untuk menghindari error cURL 77 di local environment (laragon/xampp)
+            $response = Http::withOptions(['verify' => false])->get($url);
+            $data = $response->json();
 
-        return $data['deliverability'] === 'DELIVERABLE'; // bisa juga tambahkan check lain
+            return isset($data['deliverability']) && $data['deliverability'] === 'DELIVERABLE';
+        } catch (\Exception $e) {
+            Log::error('Email validation error: ' . $e->getMessage());
+            return true; // Tetap izinkan jika API error
+        }
     }
 
     public function login(Request $request)
